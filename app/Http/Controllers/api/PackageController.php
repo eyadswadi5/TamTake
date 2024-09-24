@@ -11,7 +11,7 @@ use Illuminate\Database\QueryException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 
-class PackageController extends Controller
+class PackageController extends BaseController
 {
     /**
      * Display a listing of the resource.
@@ -19,7 +19,7 @@ class PackageController extends Controller
     public function index()
     {
         $packages = Package::all();
-        return response()->json($packages);
+        return response()->json($this->responseTamplate(true, null, null, ["packages" => $packages]), 200);
     }
 
     /**
@@ -39,20 +39,20 @@ class PackageController extends Controller
             'special_instruction' => 'nullable|string|max:1000'
         ]);
         if ($validator->fails())
-            return response()->json(["errors" => $validator->errors()]);
+            return response()->json($this->responseTamplate(false, "Credential validation error", $validator->errors()));
 
         if (!Shipment::find($request->shipment_id))
-            return response()->json(["error" => "Failed to create package: shipment not found"]);
+            return response()->json($this->responseTamplate(false, "Failed to create package", [["message" => "shipment not found"]]));
         
         $data = $request->only('shipment_id','weight','dimensions','value','package_type','is_fragile','hazardous_materials','barcode','special_instruction');
         
         try {
             $package = Package::create($data);
-            return response()->json(["message" => "package created successfully"], 201);
+            return response()->json($this->responseTamplate(true, "package created successfully"), 201);
         } catch (QueryException $e) {
-            return response()->json(["error" => "Failed to create package: database error happend"], 500);
+            return response()->json($this->responseTamplate(false, "Failed to create package", [["message"=>"A database error occurred."]]), 500);
         } catch (Exception $e) {
-            return response()->json(["error" => "Failed to create package: unknown error happend"], 500);
+            return response()->json($this->responseTamplate(false, "Failed to create package", [["message"=>"An unknown error occurred."]]), 500);
         }
     }
 
@@ -63,9 +63,9 @@ class PackageController extends Controller
     {
         try {
             $package = Package::findOrFail($id);
-            return response()->json(["package" => $package], 200);
+            return response()->json($this->responseTamplate(true, null,null, ["package" => $package]), 200);
         } catch (ModelNotFoundException $e) {
-            return response()->json(["error" => "can't find package"], 404);
+            return response()->json($this->responseTamplate(false, "Failed to get package", [["message"=>"package not found"]]), 404);
         }
     }
 
@@ -77,7 +77,7 @@ class PackageController extends Controller
         try {
             $package = Package::findOrFail($id);
         } catch (ModelNotFoundException $e) {
-            return response()->json(["error" => "can't find package"], 404);
+            return response()->json($this->responseTamplate(false, "Failed to create package", [["message"=>"package not found"]]), 404);
         }
 
         $validator = Validator::make($request->all(), [
@@ -91,17 +91,17 @@ class PackageController extends Controller
             'special_instruction' => 'nullable|string|max:1000'
         ]);
         if ($validator->fails())
-            return response()->json(["errors" => $validator->errors()]);
+            return response()->json($this->responseTamplate(false, "Credential validation error", $validator->errors()));
         
         $data = $request->only('weight','dimensions','value','package_type','is_fragile','hazardous_materials','barcode','special_instruction');
     
         try {
             $package->update($data);
-            return response()->json(["message" => "package updated successfully"], 201);
+            return response()->json($this->responseTamplate(true, "package updated successfully"), 201);
         } catch (QueryException $e) {
-            return response()->json(["error" => "Failed to update package: database error happend"], 500);
+            return response()->json($this->responseTamplate(false, "Failed to update package", [["message"=>"A database error occurred."]]), 500);
         } catch (Exception $e) {
-            return response()->json(["error" => "Failed to update package: unknown error happend"], 500);
+            return response()->json($this->responseTamplate(false, "Failed to update package", [["message"=>"A unknown error occurred."]]), 500);
         }
     
     }
@@ -114,11 +114,11 @@ class PackageController extends Controller
         try {
             $package = Package::findOrFail($id);
             $package->delete();
-            return response()->json(["message" => "deleted successfully"], 200);
+            return response()->json($this->responseTamplate(true, "package deleted successfully"), 200);
         } catch (ModelNotFoundException $e) {
-            return response()->json(["error" => "deleting package failed: can't find package"], 404);
+            return response()->json($this->responseTamplate(false, "Failed to delete package", [["message"=>"package not found"]]), 404);
         } catch (Exception $e) {
-            return response()->json(["error" => "deleting package failed: unknown error"]);
+            return response()->json($this->responseTamplate(false, "Failed to delete package", [["message"=>"A unknown error occurred."]]), 500);
         }
     }
 }

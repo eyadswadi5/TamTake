@@ -18,7 +18,7 @@ use Tymon\JWTAuth\Exceptions\JWTException;
 use Illuminate\Support\Str;
 use Tymon\JWTAuth\Contracts\Providers\JWT;
 
-class AuthController extends Controller
+class AuthController extends BaseController
 {
     /**
      * Register a new user.
@@ -36,7 +36,7 @@ class AuthController extends Controller
         if ($validetor->fails())
             return response()->json([
                 "success" => false,
-                "message" => "error validating the credentials",
+                "message" => "Credential validation error",
                 "errors" => $validetor->errors()
             ], 422);
         
@@ -69,14 +69,8 @@ class AuthController extends Controller
 
         try {
             UserHasPermission::insert($permissionsRecord);
-            return response()->json([
-                "success" => true,
-                "message" => "account created successfully",
-                "errors" => null,
-                "user" => $user,
-                "role" => $role->role,
-                "token" => $token
-            ], 201);
+            $data = ["user" => $user, "role" => $role->role,"token" => $token];
+            return response()->json($this->responseTamplate(true, "account created successfully", null, $data), 201);
         } catch (QueryException $e) {
             return response()->json([
                 "success" => false, 
@@ -110,7 +104,11 @@ class AuthController extends Controller
             'industry_type' => 'nullable|string|max:255',
         ]);
         if ($validetor->fails())
-            return response()->json(["errors" => $validetor->errors()], 422);
+            return response()->json([
+                "success" => false,
+                "message" => "Credential validation error",
+                "errors" => $validetor->errors()
+            ], 422);
         
         $user = User::create([
             'first_name' => $request->first_name,

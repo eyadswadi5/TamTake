@@ -19,7 +19,13 @@ class AddressController extends Controller
     {
         $addresses = Address::all();
 
-        return response()->json($addresses);
+        return response()->json([
+            "success" => true,
+            "message" => null,
+            "errors" => null,
+            "addresses" => $addresses
+        ]);
+
     }
 
     /**
@@ -41,18 +47,43 @@ class AddressController extends Controller
         ]);
 
         if ($validator->fails())
-            return response()->json(["errors" => $validator->errors()], 422);
+            return response()->json([
+                "success" => false,
+                "message" => "Credential validation error",
+                "errors" => $validator->errors()
+            ], 422);
 
 
         $data = $request->only('customer_id','street_address','apartment_number','country','city','region','zip_code','latitude','longitude','is_primary');
 
         try {            
             $address = Address::create($data);
-            return response()->json([$address, "message" => "address assigned successfully" ], 200);
+            return response()->json([
+                "success" => true,
+                "message" => "address assigned successfully",
+                "errors" => null,
+                "address" => $address
+            ], 201);
         } catch (QueryException $e) {
-            return response()->json(["error" => "Failed to create address: database error happend"], 500);
+            return response()->json([
+                "success" => false,
+                "message" => "Failed to create address",
+                "errors" => [
+                    [
+                        "message" => "database error happend",
+                    ]
+                ]
+            ], 500);
         } catch (Exception $e) {
-            return response()->json(["error" => "Failed to create address: unknown error happend"], 500);
+            return response()->json([
+                "success" => false,
+                "message" => "Failed to create address",
+                "errors" => [
+                    [
+                        "message" => "unknown error happend",
+                    ]
+                ]
+            ], 500);
         }
     }
 
@@ -63,9 +94,22 @@ class AddressController extends Controller
     {
         try {
             $address = Address::findOrFail($id);
-            return response()->json(["address" => $address], 200);
+            return response()->json([
+                "success" => true,
+                "message" => null,
+                "errors" => null,
+                "address" => $address
+            ], 200);
         } catch (ModelNotFoundException $e) {
-            return response()->json(["error" => "can't find address"]);
+            return response()->json([
+                "success" => false,
+                "message" => "Failed to get address",
+                "errors" => [
+                    [
+                        "message" => "address not found",
+                    ]
+                ]
+            ], 500);
         }
     }
 
@@ -77,7 +121,15 @@ class AddressController extends Controller
         try {
             $address = Address::findOrFail($id);
         } catch (ModelNotFoundException $e) {
-            return response()->json(["error" => "can't find address"]);
+            return response()->json([
+                "success" => false,
+                "message" => "Failed to update address",
+                "errors" => [
+                    [
+                        "message" => "address not found",
+                    ]
+                ]
+            ], 500);
         }
 
         $validator = Validator::make($request->all(), [
@@ -92,17 +144,42 @@ class AddressController extends Controller
             'is_primary' => 'boolean'
         ]);
         if ($validator->fails())
-            return response()->json(["errors" => $validator->errors()], 422);
+        return response()->json([
+            "success" => false,
+            "message" => "Failed to create address",
+            "errors" => $validator->errors()
+        ], 422);
 
         $data = $request->only('street_address','apartment_number','country','city','region','zip_code','latitude','longitude','is_primary');
 
         try {
             $address->update($data);
-            return response()->json(["message" => "address updated successfully"], 200);
+            return response()->json([
+                "success" => true,
+                "message" => "address updated successfully",
+                "errors" => null,
+                "address" => $address,
+            ], 200);
         } catch (QueryException $e) {
-            return response()->json(["error" => "Failed to update address: database error happend"], 500);
+            return response()->json([
+                "success" => false,
+                "message" => "Failed to update address",
+                "errors" => [
+                    [
+                        "message" => "database error happend",
+                    ]
+                ]
+            ], 500);
         } catch (Exception $e) {
-            return response()->json(["error" => "Failed to update address: unknown error happend"], 500);
+            return response()->json([
+                "success" => false,
+                "message" => "Failed to update address",
+                "errors" => [
+                    [
+                        "message" => "unknown error happend",
+                    ]
+                ]
+            ], 500);
         }
     }
 
@@ -114,11 +191,31 @@ class AddressController extends Controller
         try {
             $address = Address::findOrFail($id);
             $address->delete();
-            return response()->json(["message" => "address deleted successfully"], 200);
+            return response()->json([
+                "success" => true,
+                "message" => "address deleted successfully",
+                "errors" => null,
+            ], 200);
         } catch (ModelNotFoundException $e) {
-            return response()->json(["error" => "Faild to delete address: address not found"]);
+            return response()->json([
+                "success" => false,
+                "message" => "Failed to delete address",
+                "errors" => [
+                    [
+                        "message" => "address not found",
+                    ]
+                ]
+            ], 500);
         } catch (Exception $e) {
-            return response()->json(["error" => "Faild to delete address: unknown error happend"]);
+            return response()->json([
+                "success" => false,
+                "message" => "Failed to delete address",
+                "errors" => [
+                    [
+                        "message" => "unknown error happend",
+                    ]
+                ]
+            ], 500);
         }
     }
 }

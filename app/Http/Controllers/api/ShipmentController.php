@@ -15,7 +15,7 @@ use Tymon\JWTAuth\Facades\JWTAuth;
 use Illuminate\Support\Str;
 
 
-class ShipmentController extends Controller
+class ShipmentController extends BaseController
 {
     /**
      * Display a listing of the resource.
@@ -23,7 +23,7 @@ class ShipmentController extends Controller
     public function index()
     {
         $shipments = Shipment::all();
-        return response()->json($shipments);
+        return response()->json($this->responseTamplate(true, null, null, ["shipments" => $shipments]), 200);
     }
 
     /**
@@ -70,7 +70,7 @@ class ShipmentController extends Controller
         ]);
 
         if ($validator->fails())
-            return response()->json(["errors" => $validator->errors()]);
+            return response()->json($this->responseTamplate(false, "Credential validation error", $validator->errors()), 422);
 
         $customerId = JWTAuth::user()->id;
 
@@ -104,10 +104,10 @@ class ShipmentController extends Controller
             
             $packages = Package::insert($packagesRecords->toArray());
     
-            return response()->json(["message" => "shipment created successfully"]);
+            return response()->json($this->responseTamplate(true, "shipment created successfully"), 201);
 
         } catch (QueryException $e) {
-            return response()->json(["error" => $e], 500);
+            return response()->json($this->responseTamplate(false, "Failed to create shipment", [["message"=>"A database error occurred."]]), 500);
         }
     }
 
@@ -118,9 +118,9 @@ class ShipmentController extends Controller
     {
         try {
             $shipment = Shipment::with(['originAddress', 'destinationAddress', 'packages'])->findOrFail($id);
-            return new ShipmentResource($shipment);
+            return response()->json([$this->responseTamplate(true), "shipment" => new ShipmentResource($shipment)] );
         } catch (QueryException $e) {
-            return response()->json(["error" => "Failed to get shipment details: unknown error happend"], 500);
+            return response()->json($this->responseTamplate(false, "Failed to get shipment", [["message"=>"shipment not found"]]), 404);
         }
     }
 
