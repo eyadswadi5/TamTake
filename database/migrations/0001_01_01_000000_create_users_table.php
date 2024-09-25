@@ -19,7 +19,7 @@ return new class extends Migration
             $table->string('phone_number');
             $table->timestamp('email_verified_at')->nullable();
             $table->string('password');
-            $table->enum("status", ["activated", "suspended"]);
+            $table->enum("status", ["activated", "suspended", "pending"])->default("pending");
             $table->softDeletes();
             $table->rememberToken();
             $table->timestamps();

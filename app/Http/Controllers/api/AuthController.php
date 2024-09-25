@@ -17,9 +17,16 @@ use Tymon\JWTAuth\Facades\JWTAuth;
 use Tymon\JWTAuth\Exceptions\JWTException;
 use Illuminate\Support\Str;
 use Tymon\JWTAuth\Contracts\Providers\JWT;
+use App\Services\PHPMailerService;
 
 class AuthController extends BaseController
 {
+    protected $mailer;
+
+    public function __construct(PHPMailerService $mailer)
+    {
+        $this->mailer = $mailer;
+    }
     /**
      * Register a new user.
      */
@@ -48,7 +55,7 @@ class AuthController extends BaseController
             'password' => Hash::make($request->password),
         ]);
 
-        $token = JWTAuth::fromUser($user);
+        // $token = JWTAuth::fromUser($user);
 
         $role = Role::where("role", "=", $request->role)->first();
 
@@ -69,8 +76,11 @@ class AuthController extends BaseController
 
         try {
             UserHasPermission::insert($permissionsRecord);
-            $data = ["user" => $user, "role" => $role->role,"token" => $token];
-            return response()->json($this->responseTamplate(true, "account created successfully", null, $data), 201);
+
+            $this->mailer->sendVerificationEmail($user);
+
+            $data = ["user" => $user, "role" => $role->role];
+            return response()->json($this->responseTemplate(true, "account created successfully, please check you email.", null, $data), 201);
         } catch (QueryException $e) {
             return response()->json([
                 "success" => false, 
@@ -208,6 +218,27 @@ class AuthController extends BaseController
                 ]
             ], 500);
         }
+        $user = JWTAuth::user();
+        if (!$user->hasVerifiedEmail() || $user->status == "pending")
+            return response()->json([
+                'success' => false,
+                'message' => 'can\'t login',
+                'errors' => [
+                    [
+                        "message" => "account is not activated",
+                    ]
+                ]
+            ], 400);
+        else if ($user->status == "suspended")
+            return response()->json([
+                'success' => false,
+                'message' => 'can\'t login',
+                'errors' => [
+                    [
+                        "message" => "account is suspended",
+                    ]
+                ]
+            ], 400);
 
         return $this->respondWithToken($token, JWTAuth::user());
     }
