@@ -3,26 +3,27 @@
 use App\Http\Controllers\api\AddressController;
 use App\Http\Controllers\api\PackageController;
 use App\Http\Controllers\api\ShipmentController;
-use App\Http\Controllers\api\VerifyEmailController;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 
-Route::apiResources([
-    'addresses' => AddressController::class,
-    'packages' => PackageController::class,   
-    'shipments' => ShipmentController::class, 
-]);
+Route::group(['namespace' => 'App\Http\Controllers', 'middleware' => 'api'], function ($router) {
 
-Route::group(['namespace' => 'App\Http\Controllers\api', 'middleware' => 'api'], function ($router) {
+    Route::apiResources([
+        'addresses' => AddressController::class,
+        'packages' => PackageController::class,   
+        'shipments' => ShipmentController::class, 
+    ]);
+
+    Route::get("/email/resend", "api\VerifyEmailController@resend")->name('verification.resend');
+    Route::post("/forget-password", "api\ResetPasswordController@sendResetLink")->name("password.send-link");
+    Route::put("/forget-password/{token}", "api\ResetPasswordController@resetPassword")->name("password.reset");
 
     Route::group(['prefix' => 'auth'], function () {
-        Route::get('/email/resend', [VerifyEmailController::class, 'resend'])->name('verification.resend');
-        Route::post('login', 'AuthController@login');
-        Route::post('register', 'AuthController@register');
-        Route::post('register-business', 'AuthController@registerBusiness');
-        Route::post('logout', 'AuthController@logout')->middleware('auth:api');
-        Route::post('refresh', 'AuthController@refresh')->middleware('auth:api');
-        Route::get('user-profile', 'AuthController@userProfile');   
+        Route::post('login', 'api\AuthController@login');
+        Route::post('register', 'api\AuthController@register');
+        Route::post('register-business', 'api\AuthController@registerBusiness');
+        Route::post('logout', 'api\AuthController@logout')->middleware('auth:api');
+        Route::post('refresh', 'api\AuthController@refresh')->middleware('auth:api');
+        Route::get('user-profile', 'api\AuthController@userProfile');   
     });
 
 });

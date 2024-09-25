@@ -28,7 +28,8 @@ class VerifyEmailController extends BaseController
                 $user->status = "activated";
                 $user->save();
     
-                return response()->json($this->responseTemplate(true, "your account activated successfully"), 200);
+                return redirect(env("WEBSITE_URL")."/login")
+                    ->response()->json($this->responseTemplate(true, "your account activated successfully"), 200);
             } else {
                 return response()->json($this->responseTemplate(false, "invalid verification link or email mismatch"), 400);
             }
